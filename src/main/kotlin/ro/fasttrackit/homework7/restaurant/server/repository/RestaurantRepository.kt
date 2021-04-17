@@ -5,9 +5,11 @@ import ro.fasttrackit.homework7.restaurant.server.domain.Restaurant
 
 interface RestaurantRepository : MongoRepository<Restaurant, String> {
 
-    fun findAllByCity(city : String): Restaurant
+    fun findAllByCityIgnoreCase(city : String): List<Restaurant>
 
-    fun findAllByStarsIn(stars : List<String>): Restaurant
+    fun findAllByStarsIn(stars : List<Int>): List<Restaurant>
+
+    fun findAllByStarsInAndCityIgnoreCase(stars: List<Int>, city: String): List<Restaurant>
 
     
 }
