@@ -56,12 +56,8 @@ class RestaurantService(
 
     fun patchRestaurant(restaurantId: String, patch: JsonPatch): Restaurant {
         val dbRestaurant = getRestaurantOrElseThrow(restaurantId)
+        val patchedJson = patch.apply(mapper.valueToTree(dbRestaurant))
 
-        //TODO: Learn kotlin
-        //val patchedJson = patch.apply { mapper.valueToTree<JsonNode>(dbRestaurant) }
-        //val patchedRestaurant = mapper.treeToValue<Restaurant>(patchedJson)
-        //return replaceRestaurant(restaurantId, patchedRestaurant!!)
-
-        return replaceRestaurant(restaurantId, dbRestaurant)
+        return replaceRestaurant(restaurantId, mapper.treeToValue(patchedJson, Restaurant::class.java))
     }
 }
