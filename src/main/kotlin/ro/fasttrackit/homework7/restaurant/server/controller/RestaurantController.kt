@@ -1,20 +1,34 @@
 package ro.fasttrackit.homework7.restaurant.server.controller
 
 import com.github.fge.jsonpatch.JsonPatch
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.*
 import ro.fasttrackit.homework7.restaurant.server.domain.Restaurant
 import ro.fasttrackit.homework7.restaurant.server.exceptions.RestaurantNotFoundException
+import ro.fasttrackit.homework7.restaurant.server.model.CollectionResponse
+import ro.fasttrackit.homework7.restaurant.server.model.PageInfo
+import ro.fasttrackit.homework7.restaurant.server.model.RestaurantFilters
 import ro.fasttrackit.homework7.restaurant.server.service.RestaurantService
+
 
 @RestController
 @RequestMapping("restaurants")
 class RestaurantController(private val service: RestaurantService) {
 
     @GetMapping
-    fun getAll(
-        @RequestParam(required = false) stars: List<Int>?,
-        @RequestParam(required = false) city: String?
-    ): List<Restaurant> = service.getAll(stars, city);
+    fun getAll(filters: RestaurantFilters?, pageable: Pageable): CollectionResponse<Restaurant> {
+        val productPage: Page<Restaurant> = service.getAll(filters, pageable)
+        return CollectionResponse(
+            productPage.content,
+            PageInfo(
+                productPage.totalPages,
+                productPage.numberOfElements,
+                pageable.pageNumber,
+                pageable.pageSize
+            )
+        )
+    }
 
     @PostMapping
     fun addRestaurant(@RequestBody restaurant: Restaurant): Restaurant = service.addRestaurant(restaurant)

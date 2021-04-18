@@ -1,13 +1,14 @@
 package ro.fasttrackit.homework7.restaurant.server.service
 
-import com.fasterxml.jackson.core.TreeNode
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.treeToValue
 import com.github.fge.jsonpatch.JsonPatch
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import ro.fasttrackit.homework7.restaurant.server.domain.Restaurant
 import ro.fasttrackit.homework7.restaurant.server.exceptions.RestaurantNotFoundException
+import ro.fasttrackit.homework7.restaurant.server.model.RestaurantFilters
 import ro.fasttrackit.homework7.restaurant.server.repository.RestaurantRepository
 import java.util.*
 
@@ -16,7 +17,8 @@ class RestaurantService(
     private val repository: RestaurantRepository,
     private val mapper: ObjectMapper
 ) {
-    fun getAll(stars: List<Int>?, city: String?): List<Restaurant> = checkRequestParams(stars, city)
+    fun getAll(filters: RestaurantFilters?, pageable: Pageable): Page<Restaurant> =
+        checkRequestParams(filters, pageable)
 
     fun addRestaurant(restaurant: Restaurant): Restaurant = repository.save(restaurant)
 
@@ -29,11 +31,13 @@ class RestaurantService(
     private fun getRestaurantOrElseThrow(restaurantId: String): Restaurant = repository.findById(restaurantId)
         .orElseThrow { RestaurantNotFoundException("Could not find restaurant with ID: $restaurantId") }
 
-    private fun checkRequestParams(stars: List<Int>?, city: String?): List<Restaurant> {
-        return if (stars == null && city == null) repository.findAll()
-        else if (stars != null && city == null) repository.findAllByStarsIn(stars)
-        else if (stars == null && city != null) repository.findAllByCityIgnoreCase(city)
-        else repository.findAllByStarsInAndCityIgnoreCase(stars!!, city!!)
+    private fun checkRequestParams(filters: RestaurantFilters?, pageable: Pageable): Page<Restaurant> {
+        return if (filters?.stars == null && filters?.city == null) repository.findAll(pageable)
+        else if (filters.stars != null && filters.city == null)
+            repository.findAllByStarsIn(filters.stars, pageable)
+        else if (filters.stars == null && filters.city != null)
+            repository.findAllByCityIgnoreCase(filters.city, pageable)
+        else repository.findAllByStarsInAndCityIgnoreCase(filters.stars!!, filters.city!!, pageable)
     }
 
     fun replaceRestaurant(restaurantId: String, newRestaurant: Restaurant): Restaurant {
@@ -53,10 +57,11 @@ class RestaurantService(
     fun patchRestaurant(restaurantId: String, patch: JsonPatch): Restaurant {
         val dbRestaurant = getRestaurantOrElseThrow(restaurantId)
 
-        val patchedJson = patch.apply { mapper.valueToTree<JsonNode>(dbRestaurant) }
+        //TODO: Learn kotlin
+        //val patchedJson = patch.apply { mapper.valueToTree<JsonNode>(dbRestaurant) }
         //val patchedRestaurant = mapper.treeToValue<Restaurant>(patchedJson)
-
         //return replaceRestaurant(restaurantId, patchedRestaurant!!)
+
         return replaceRestaurant(restaurantId, dbRestaurant)
     }
 }
